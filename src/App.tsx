@@ -43,7 +43,7 @@ export default function App() {
   }, [route, articles]);
 
   const onComposed = useCallback((a: A) => {
-    setArticles((list) => [a, ...list]);
+    setArticles((list) => [a, ...list.filter((x) => x.id !== a.id)]);
     setToast('הכתבה הודפסה ונשמרה בגיליון');
   }, []);
 

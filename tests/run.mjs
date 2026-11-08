@@ -64,6 +64,7 @@ ok(!(await page.locator('header >> text=העתקת קישור').first().isVisibl
 const waiting = (await page.textContent('[data-testid="waiting"]')).trim();
 ok(waiting.startsWith('0'), `home: waiting count computed from data (${waiting})`);
 ok(await page.locator('text=מובילה ב-').first().isVisible(), 'home: insight under the lens chart');
+ok((await page.locator('[data-aoa-demo="large"]').count()) === 1 && (await page.getAttribute('html', 'data-aoa-demo-slots')) !== null, 'home: demo video slot in the hero');
 ok((await page.locator('.press svg rect').count()) >= 4, 'home: the three plates + synthesis are drawn');
 await page.hover('.press__legend button:nth-child(2)');
 ok((await page.getAttribute('.press__legend button:nth-child(2)', 'aria-pressed')) === 'true', 'home: legend hover focuses a plate');

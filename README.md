@@ -4,6 +4,8 @@
 
 המיזוג האחרון, בלי Vercel: https://raw.githack.com/Anat1969/MagazinIshy-GH/main/app/index.html
 
+![סרטון הדגמה](docs/demo.gif)
+
 שלוש עדשות נדפסות לכתבה אחת.
 מקרה מ[מרחב פנימי](https://merhav-pnimi.vercel.app) נקרא דרך הביוגרפית, הצמצום והבודהיסטית, והופך לכתבה בקול של [מהות](https://magazin-gh.vercel.app).
 

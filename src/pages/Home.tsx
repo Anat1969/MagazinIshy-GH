@@ -59,6 +59,8 @@ export default function Home({ cases, articles, status }: Props) {
               לגיליון
             </a>
           </div>
+          {/* "סרטון הדגמה": demo.js (via ai-menu.js) places its button here, from aoa_apps data.demo. */}
+          <div className="demo-slot" data-aoa-demo="large" />
         </div>
         <div>
           <Press focus={focus} />

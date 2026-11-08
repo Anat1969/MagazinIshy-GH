@@ -90,7 +90,9 @@ function jsonSchema() {
 }
 
 // ---------------------------------------------------------------- models
-const GEMINI_MODELS = [...new Set([Deno.env.get("GEMINI_MODEL") ?? "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-2.5-flash"])];
+// gemini-2.5-flash first: the lite model returned chapters under the 60-word floor (05.11.2026).
+const GEMINI_MODELS = [...new Set([Deno.env.get("GEMINI_MODEL") ?? "gemini-2.5-flash", "gemini-flash-latest", "gemini-flash-lite-latest"])];
+const MIN_WORDS = 45; // a chapter shorter than this is sent to the next model
 
 async function geminiOnce(key: string, model: string, user: string) {
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
@@ -113,7 +115,10 @@ async function viaGemini(key: string, user: string) {
   let last: unknown;
   for (const model of GEMINI_MODELS) {
     try {
-      return { article: await geminiOnce(key, model, user), model };
+      const article = await geminiOnce(key, model, user);
+      const short = list(article.sections).some((x) => words((x as Row).body) < MIN_WORDS);
+      if (short && model !== GEMINI_MODELS[GEMINI_MODELS.length - 1]) { last = new Error(`${model}: short chapters`); continue; }
+      return { article, model };
     } catch (err) {
       last = err;
       const status = (err as { status?: number }).status;
