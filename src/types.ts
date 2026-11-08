@@ -46,5 +46,6 @@ export interface Article {
   content: ArticleContent;
   share: Partial<Record<LensId, number>>;
   model: string | null;
+  image_url?: string | null;
   created_at: string;
 }

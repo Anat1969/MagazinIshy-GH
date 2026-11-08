@@ -37,6 +37,8 @@ async function wire(ctx) {
       return r.fulfill({ body: fontCache.get(url), contentType: url.includes('css') ? 'text/css' : 'font/woff2', headers: { 'access-control-allow-origin': '*' } });
     } catch { return r.abort(); }
   });
+  await ctx.route(/AppOfApp-GH\/creations\.js|appofapp-gh\.vercel\.app\/creations\.js/, (r) => r.fulfill({ contentType: 'text/javascript', body: readFileSync(join(ROOT, 'tests/creations.local.js')) }));
+  await ctx.route(/functions\/v1\/ishy-creations/, (r) => r.fulfill({ contentType: 'application/json', body: readFileSync(join(ROOT, 'tests/creations-fixture.json')) }));
   await ctx.route(/supabase\.co\/storage\//, (r) => r.fulfill({ contentType: 'image/png', body: PNG }));
   await ctx.route(/supabase\.co\/rest\/v1\/merhav_cases/, (r) => r.fulfill({ json: CASES }));
   await ctx.route(/supabase\.co\/rest\/v1\/ishy_articles/, (r) => r.fulfill({ json: ARTICLES }));
@@ -134,6 +136,19 @@ await page.click('[data-testid="card"] >> nth=0');
 await page.waitForSelector('.art__title');
 ok(page.url().includes('#/a/'), 'issue: card opens the article');
 
+// ---------------------------------------------------------------- creations
+await page.click('.nav a[href="#/creations"]');
+await page.waitForSelector('app-creations');
+await page.waitForTimeout(1500);
+const rooms = await page.evaluate(() => {
+  const el = document.querySelector('app-creations');
+  const root = el && (el.shadowRoot || el);
+  return root ? root.textContent : '';
+});
+ok(rooms.includes('קול בחדר מהנדסים') && rooms.includes('מה עושים השבוע'), 'creations: rooms from the articles and the weekly step');
+ok(rooms.includes('פסיכולוגיית הצמצום'), 'creations: a room per lens');
+await page.screenshot({ path: join(SHOTS, 'creations-1440.png'), fullPage: true });
+
 // ---------------------------------------------------------------- installability
 const cdp = await ctx.newCDPSession(page);
 await page.goto(`${BASE}/#/`);
@@ -148,13 +163,15 @@ const browser = await chromium.launch();
 const m = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 1, reducedMotion: 'reduce', serviceWorkers: 'block' });
 await wire(m);
 const mp = await m.newPage();
-for (const [name, hash] of [['home', '#/'], ['cases', '#/cases'], ['issue', '#/issue'], ['article', `#/a/${ARTICLE.id}`]]) {
+for (const [name, hash] of [['home', '#/'], ['cases', '#/cases'], ['issue', '#/issue'], ['article', `#/a/${ARTICLE.id}`], ['creations', '#/creations']]) {
   await mp.goto(`${BASE}/${hash}`);
   await mp.waitForTimeout(700);
   const over = await mp.evaluate(() => document.documentElement.scrollWidth - innerWidth);
   ok(over <= 0, `mobile ${name}: no horizontal scroll (${over})`);
   await mp.screenshot({ path: join(SHOTS, `${name}-390.png`), fullPage: true });
 }
+await mp.goto(`${BASE}/#/a/${ARTICLE.id}`);
+await mp.waitForSelector('.chapter');
 const op = await mp.evaluate(() => getComputedStyle(document.querySelector('.chapter')).opacity);
 ok(op === '1', 'reduced motion: chapters visible without animation');
 await browser.close();

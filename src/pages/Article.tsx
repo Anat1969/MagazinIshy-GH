@@ -31,7 +31,8 @@ export default function Article({ id, articles, cases, status, onToast }: Props)
   // A treatment given to one chapter is given to all, or to none: images only when all three lenses have one.
   const imgs = useMemo(() => THREE.map((l) => latestImage(c, l)), [c]);
   const allImgs = imgs.every(Boolean);
-  const cover = latestImage(c, 'synthesis');
+  // Cover: the synthesis space Anat chose in מרחב פנימי first, then the generated cover, then the press.
+  const merhavCover = latestImage(c, 'synthesis');
 
   if (status === 'loading') return <p className="frame state">טוען את הכתבה.</p>;
   if (!a)
@@ -42,6 +43,12 @@ export default function Article({ id, articles, cases, status, onToast }: Props)
     );
 
   const k = a.content;
+  const cover = merhavCover || a.image_url || null;
+  const coverNote = merhavCover
+    ? 'המרחב של הסינתזה, כפי שנשמר במרחב הפנימי.'
+    : a.image_url
+      ? 'שער שנוצר מפרומפט הכתבה.'
+      : 'אין עדיין תמונה לסינתזה. השער הוא שלוש הפלטות.';
   const newer = articles[i - 1];
   const older = articles[i + 1];
   const readTime = (lens: string) => c?.merhav_readings.find((r) => r.lens === lens)?.updated_at;
@@ -82,10 +89,10 @@ export default function Article({ id, articles, cases, status, onToast }: Props)
         </div>
         <div>
           <div className="art__cover">
-            {cover ? <img src={cover} alt="המרחב של הסינתזה, מתוך המרחב הפנימי" /> : <Press label={k.turn.to || 'כתבה'} />}
+            {cover ? <img src={cover} alt={merhavCover ? "המרחב של הסינתזה, מתוך המרחב הפנימי" : `שער הכתבה ${k.title}`} /> : <Press label={k.turn.to || 'כתבה'} />}
           </div>
           <p className="art__credit mono mute">
-            {cover ? 'המרחב של הסינתזה, כפי שנשמר במרחב הפנימי.' : 'אין עדיין תמונת סינתזה במרחב הפנימי. השער הוא שלוש הפלטות.'}
+            {coverNote}
           </p>
         </div>
       </section>

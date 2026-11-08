@@ -8,9 +8,12 @@
   "sayClose": "מקרה אחד, שלוש עדשות, כתבה אחת.",
   "url": "magazinishy.vercel.app",
   "owner": "A&I · אד׳ ענת שטיבלמן",
-  "voice": "he-IL-HilaNeural",
+  "voice": "he-IL-AvriNeural",
   "music": "calm",
-  "colors": { "ink": "#2b2926", "accent": "#a8742f" },
+  "colors": {
+    "ink": "#2b2926",
+    "accent": "#a8742f"
+  },
   "ready": "[data-testid=\"waiting\"]",
   "scenes": [
     {
@@ -19,10 +22,22 @@
       "say": "כל עדשה היא פלטת דפוס בצבע משלה. במקום שבו שלושתן נפגשות נולדת הכתבה.",
       "goto": "./#/",
       "steps": [
-        { "hover": ".press__legend button >> nth=0", "wait": 700 },
-        { "hover": ".press__legend button >> nth=1", "wait": 700 },
-        { "hover": ".press__legend button >> nth=2", "wait": 700 },
-        { "hover": ".press__legend button >> nth=3", "wait": 700 }
+        {
+          "hover": ".press__legend button >> nth=0",
+          "wait": 700
+        },
+        {
+          "hover": ".press__legend button >> nth=1",
+          "wait": 700
+        },
+        {
+          "hover": ".press__legend button >> nth=2",
+          "wait": 700
+        },
+        {
+          "hover": ".press__legend button >> nth=3",
+          "wait": 700
+        }
       ],
       "hold": 1200
     },
@@ -30,7 +45,16 @@
       "insight": "המטרה: לראות מה מחכה לכתבה",
       "detail": "שלוש שאלות: כמה מקרים מחכים, איזו עדשה נושאת, ומה הודפס אחרון.",
       "say": "המטרה היא לדעת במבט אחד: כמה מקרים מחכים לכתבה, איזו עדשה נושאת את הגיליון, ומה הודפס אחרון.",
-      "steps": [{ "scroll": 420, "pause": 900 }, { "hover": ".bars", "wait": 1200 }],
+      "steps": [
+        {
+          "scroll": 420,
+          "pause": 900
+        },
+        {
+          "hover": ".bars",
+          "wait": 1200
+        }
+      ],
       "hold": 1400
     },
     {
@@ -39,28 +63,56 @@
       "say": "הכלי מתחיל במקרה מהמרחב הפנימי. כל מקרה מגיע עם ארבע הקריאות שלו.",
       "nav": ".nav a[href=\"#/cases\"]",
       "ready": "[data-testid=\"case\"]",
-      "steps": [{ "click": "[data-testid=\"case\"] >> nth=1 >> .case__row", "wait": 1400 }],
+      "steps": [
+        {
+          "click": "[data-testid=\"case\"] >> nth=1 >> .case__row",
+          "wait": 1400
+        }
+      ],
       "hold": 1200
     },
     {
       "insight": "לחיצה אחת מדפיסה כתבה",
       "detail": "Gemini החינמי מזקק פרק לכל עדשה, סינתזה, ציטוט, הייקו וצעד לשבוע.",
       "say": "לחיצה אחת, ו-ג'מיני מזקק פרק לכל עדשה, סינתזה, ציטוט, הייקו וצעד לשבוע.",
-      "steps": [{ "click": "[data-testid=\"compose\"]", "wait": 2600 }],
+      "steps": [
+        {
+          "click": "[data-testid=\"compose\"]",
+          "wait": 2600
+        }
+      ],
       "hold": 600
     },
     {
       "insight": "פס המקור: כמה מכל עדשה",
       "detail": "כל כתבה מראה איזו עדשה נושאת אותה, ומתי נולדה בתהליך.",
       "say": "כל כתבה מראה כמה ממנה הגיע מכל עדשה, ואיפה בתהליך היא נולדה.",
-      "steps": [{ "scroll": 380, "pause": 1200 }, { "hover": ".ribbon--big", "wait": 1000 }],
+      "steps": [
+        {
+          "scroll": 380,
+          "pause": 1200
+        },
+        {
+          "hover": ".ribbon--big",
+          "wait": 1000
+        }
+      ],
       "hold": 1000
     },
     {
       "insight": "ממה למה, וצעד לשבוע",
       "detail": "פרק לכל עדשה, ואחריו סינתזה, ציטוט, הייקו ופעולה אחת.",
       "say": "ובסוף: ממה למה עובר האדם, וצעד אחד לשבוע הקרוב.",
-      "steps": [{ "scroll": 900, "pause": 900 }, { "scroll": 600, "pause": 1400 }],
+      "steps": [
+        {
+          "scroll": 900,
+          "pause": 900
+        },
+        {
+          "scroll": 600,
+          "pause": 1400
+        }
+      ],
       "hold": 1000
     },
     {
@@ -69,8 +121,18 @@
       "say": "בגיליון רואים את כל הכתבות, ומקבצים לפי עדשה או לפי מקרה.",
       "nav": ".nav a[href=\"#/issue\"]",
       "ready": "[data-testid=\"card\"]",
-      "steps": [{ "click": "button.chip >> text=עדשה", "wait": 1200 }, { "hover": "[data-testid=\"card\"] >> nth=0", "wait": 900 }],
+      "steps": [
+        {
+          "click": "button.chip >> text=עדשה",
+          "wait": 1200
+        },
+        {
+          "hover": "[data-testid=\"card\"] >> nth=0",
+          "wait": 900
+        }
+      ],
       "hold": 1000
     }
-  ]
+  ],
+  "voiceRate": "+20%"
 }

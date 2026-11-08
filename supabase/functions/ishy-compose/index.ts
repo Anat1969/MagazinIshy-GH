@@ -3,6 +3,8 @@
 // Reads merhav_cases / merhav_readings, writes ishy_articles only (shared project cultura-GH).
 // Text: Gemini free tier first (GEMINI_API_KEY), Claude (ANTHROPIC_API_KEY) as fallback only.
 // Privacy: only the distilled, anonymous lens readings are sent, never the raw case body.
+// Cover: fal (FAL_API_KEY, the key Mahut already uses), from an English prompt, copied into the ishy-media bucket.
+// Actions: {caseId} composes an article (and its cover); {coverFor: articleId} makes a cover for an article that has none.
 // No login (like both parent apps), capped at HOURLY_LIMIT articles per hour.
 import Anthropic from "npm:@anthropic-ai/sdk";
 
@@ -46,6 +48,7 @@ const SYSTEM = `את/ה העורך/ת הראשי/ת של "מגזין מהמרח�
 - haiku: שלוש שורות בעברית, בערך 5-7-5 הברות, דימוי מרחבי אחד מתוך המרחבים של העדשות.
 - turn: from ו-to, שתיים עד ארבע מילים כל אחד: ממה למה עובר האדם בכתבה.
 - action: צעד אחד לשבוע הקרוב, משפט אחד עד 20 מילים, עם הבלטה אחת.
+- visual_prompt_en: אותו מרחב בדיוק, באנגלית, משפט אחד עד 60 מילים, לתמונת השער שהאפליקציה מייצרת.
 - visual_prompt_he: פרומפט למידג'רני בעברית בלבד, שורה אחת רציפה, לשער הכתבה: מרחב אחד שמגלם את הסינתזה. סדר: רעיון ליבה חזותי, סוג המרחב, חומר ומרקם, מקור אור, קומפוזיציה, פלטה, נוף ישראלי כשמתאים, זווית מצלמה, שעה ביום. בלי אנשים, בלי טקסט, בלי פרמטרים.
 
 הבלטות: מושגים, מספרים ושמות שיטות. לא מילות קישור ולא משפט שלם.
@@ -54,7 +57,7 @@ const SYSTEM = `את/ה העורך/ת הראשי/ת של "מגזין מהמרח�
 
 // ---------------------------------------------------------------- schema
 const SECTION_PROPS = { heading: "string", insight: "string", body: "string" };
-const FIELDS = ["title", "subtitle", "lede", "quote", "action", "visual_prompt_he"];
+const FIELDS = ["title", "subtitle", "lede", "quote", "action", "visual_prompt_he", "visual_prompt_en"];
 
 function geminiSchema() {
   const S = { type: "STRING" };
@@ -215,6 +218,7 @@ function clean(a: Row) {
     turn: { from: s(turn.from), to: s(turn.to) },
     action: s(a.action),
     visual_prompt_he: `${s(a.visual_prompt_he).replace(/[.,\s]+$/, "")}, ${MJ_TAIL}`,
+    visual_prompt_en: s(a.visual_prompt_en),
   };
   if (!out.title || !out.synthesis.body) throw new Error("empty article");
   // Share of the article carried by each lens: words of its chapter, and the synthesis apart.
@@ -222,6 +226,80 @@ function clean(a: Row) {
   for (const x of sections) share[String(x.lens)] = words(x.heading) + words(x.insight) + words(x.body);
   share.synthesis = words(out.synthesis.heading) + words(out.synthesis.insight) + words(out.synthesis.body);
   return { content: out, share };
+}
+
+// ---------------------------------------------------------------- cover (fal)
+const BUCKET = "ishy-media";
+const COVER_STYLE = "Documentary realism, professional architecture photography, square 1:1, soft natural light, calm, no people, no text, no letters.";
+
+function falKey(): string | undefined {
+  const direct = Deno.env.get("FAL_API_KEY")?.trim();
+  if (direct) return direct;
+  for (const name of Object.keys(Deno.env.toObject())) {
+    if (!/fal/i.test(name) || /^SUPABASE_/i.test(name)) continue;
+    const v = Deno.env.get(name)?.trim();
+    if (v) return v;
+  }
+}
+
+// The Hebrew Midjourney prompt, in English for the image model (older articles have no visual_prompt_en).
+async function englishPrompt(he: string): Promise<string> {
+  const key = Deno.env.get("GEMINI_API_KEY")?.trim();
+  const clean = he.replace(/,?\s*Documentary realism.*$/s, "");
+  if (!key) return clean;
+  for (const model of GEMINI_MODELS) {
+    try {
+      const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: `Translate this image prompt from Hebrew to English. One sentence, up to 60 words, only the translation:\n${clean}` }] }] }),
+        signal: AbortSignal.timeout(25000),
+      });
+      if (!r.ok) continue;
+      const j = await r.json();
+      const t = j?.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("").trim();
+      if (t) return t;
+    } catch (_) { /* next model */ }
+  }
+  return clean;
+}
+
+async function makeCover(id: string, prompt: string): Promise<string | null> {
+  const key = falKey();
+  if (!key) return null;
+  const full = `${prompt.replace(/[.\s]+$/, "")}. ${COVER_STYLE}`;
+  for (const [endpoint, body] of [
+    ["https://fal.run/fal-ai/nano-banana-2", { prompt: full, aspect_ratio: "1:1" }],
+    ["https://fal.run/fal-ai/flux/schnell", { prompt: full, image_size: "square_hd", num_inference_steps: 4, num_images: 1 }],
+  ] as const) {
+    try {
+      const r = await fetch(endpoint, { method: "POST", headers: { Authorization: `Key ${key}`, "Content-Type": "application/json" }, body: JSON.stringify(body) });
+      if (!r.ok) continue;
+      const url = (await r.json())?.images?.[0]?.url;
+      if (!url) continue;
+      const img = await fetch(url);
+      if (!img.ok) continue;
+      const type = img.headers.get("content-type") ?? "image/jpeg";
+      const ext = type.includes("png") ? "png" : type.includes("webp") ? "webp" : "jpg";
+      const path = `articles/${id}-${Date.now()}.${ext}`;
+      const up = await fetch(`${SB_URL}/storage/v1/object/${BUCKET}/${path}`, {
+        method: "POST",
+        headers: { ...SB, "Content-Type": type, "x-upsert": "true", "Cache-Control": "31536000" },
+        body: await img.arrayBuffer(),
+      });
+      if (up.ok) return `${SB_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+    } catch (_) { /* try next */ }
+  }
+  return null;
+}
+
+async function coverFor(article: Row): Promise<string | null> {
+  const k = (article.content ?? {}) as Row;
+  const prompt = s(k.visual_prompt_en) || (await englishPrompt(s(k.visual_prompt_he)));
+  if (!prompt) return null;
+  const url = await makeCover(String(article.id), prompt);
+  if (url) await rest(`ishy_articles?id=eq.${article.id}`, { method: "PATCH", body: JSON.stringify({ image_url: url }) });
+  return url;
 }
 
 // ---------------------------------------------------------------- server
@@ -247,8 +325,18 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  let body: { caseId?: string };
+  let body: { caseId?: string; coverFor?: string };
   try { body = await req.json(); } catch { return json({ error: "Invalid JSON" }, 400); }
+
+  if (body.coverFor) {
+    if (!/^[0-9a-f-]{36}$/i.test(body.coverFor)) return json({ error: "מזהה כתבה לא תקין." }, 400);
+    const a = (await rest(`ishy_articles?id=eq.${body.coverFor}&select=id,content,image_url`))?.[0];
+    if (!a) return json({ error: "הכתבה לא נמצאה." }, 404);
+    // one cover per article: the open endpoint cannot drain the fal key
+    if (a.image_url) return json({ image_url: a.image_url });
+    const url = await coverFor(a);
+    return url ? json({ image_url: url }) : json({ error: "לא הצלחתי לייצר שער כרגע." }, 502);
+  }
   const caseId = String(body.caseId ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(caseId)) return json({ error: "צריך לבחור מקרה." }, 400);
 
@@ -296,5 +384,7 @@ Deno.serve(async (req) => {
       model: result.model,
     }),
   });
+  // The cover is a bonus: an article without one is still an article.
+  try { saved.image_url = await coverFor(saved); } catch (_) { /* keep the article */ }
   return json({ article: saved });
 });

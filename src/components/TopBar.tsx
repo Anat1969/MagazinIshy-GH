@@ -16,6 +16,7 @@ function Mark() {
 const NAV: { href: string; label: string; page: Route['page'] }[] = [
   { href: '#/issue', label: 'הגיליון', page: 'issue' },
   { href: '#/cases', label: 'מקרים להפקה', page: 'cases' },
+  { href: '#/creations', label: 'יצירות', page: 'creations' },
 ];
 
 export default function TopBar({ route, items }: { route: Route; items: MenuItem[] }) {

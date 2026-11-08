@@ -6,6 +6,7 @@ import Article from './pages/Article';
 import Cases from './pages/Cases';
 import Home from './pages/Home';
 import Issue from './pages/Issue';
+import Creations from './pages/Creations';
 import { go, useRoute } from './route';
 import type { Article as A, Case } from './types';
 
@@ -37,7 +38,7 @@ export default function App() {
   }, [toast]);
 
   useEffect(() => {
-    const names: Record<string, string> = { home: 'בית', cases: 'מקרים להפקה', issue: 'הגיליון' };
+    const names: Record<string, string> = { home: 'בית', cases: 'מקרים להפקה', issue: 'הגיליון', creations: 'יצירות' };
     const a = route.page === 'article' ? articles.find((x) => x.id === route.id) : null;
     document.title = `${a ? a.content.title : names[route.page]} · מגזין מהמרחב הפנימי`;
   }, [route, articles]);
@@ -62,6 +63,7 @@ export default function App() {
       {route.page === 'home' && <Home cases={cases} articles={articles} status={status} />}
       {route.page === 'cases' && <Cases cases={cases} articles={articles} open={route.open} status={status} onComposed={onComposed} />}
       {route.page === 'issue' && <Issue articles={articles} status={status} />}
+      {route.page === 'creations' && <Creations />}
       {route.page === 'article' && <Article id={route.id} articles={articles} cases={cases} status={status} onToast={setToast} />}
       {toast && (
         <div className="toast" role="status">

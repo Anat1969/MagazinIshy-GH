@@ -10,3 +10,6 @@ export const DEV_CHAT_URL = 'https://claude.ai/code/session_01UBnSCK1mDqYN1gDjxc
 export const MERHAV_URL = 'https://merhav-pnimi.vercel.app';
 export const MAHUT_URL = 'https://magazin-gh.vercel.app';
 export const merhavCaseUrl = (id: string) => `${MERHAV_URL}/case/${id}`;
+
+// creations.json for <app-creations>, built live from the articles (supabase/functions/ishy-creations)
+export const CREATIONS_URL = `${SUPABASE_URL}/functions/v1/ishy-creations`;
